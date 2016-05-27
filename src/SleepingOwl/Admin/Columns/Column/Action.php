@@ -1,171 +1,180 @@
 <?php namespace SleepingOwl\Admin\Columns\Column;
 
-use SleepingOwl\Admin\Admin;
-use SleepingOwl\Html\FormBuilder;
-use Lang;
-use SleepingOwl\Models\Interfaces\ModelWithOrderFieldInterface;
+use AdminTemplate;
+use Closure;
 
-class Action extends BaseColumn
+class Action extends NamedColumn
 {
+
 	/**
-	 * @var \SleepingOwl\Admin\Router
-	 */
-	protected $router;
-	/**
-	 * @var FormBuilder
-	 */
-	protected $formBuilder;
-	/**
+	 * Action icon class
 	 * @var string
 	 */
-	protected $icon = null;
+	protected $icon;
 	/**
+	 * Action button style ('long' or 'short')
 	 * @var string
 	 */
 	protected $style = 'long';
 	/**
-	 * @var string|\Closure
-	 */
-	protected $url;
-	/**
-	 * @var \Closure
+	 * Button submit action
+	 * @var Closure
 	 */
 	protected $callback;
 	/**
+	 * Action button target ('_self', '_blank' or any else)
 	 * @var string
 	 */
-	protected $target;
+	protected $target = '_self';
+	/**
+	 * Action button value (button label)
+	 * @var string
+	 */
+	protected $value;
+	/**
+	 * Action button url
+	 * @var string
+	 */
+	protected $url;
 
 	/**
-	 *
+	 * @param string $name
 	 */
-	function __construct($name, $label = null)
+	function __construct($name)
 	{
-		parent::__construct($name, $label);
-		$this->sortable = false;
-		$admin = Admin::instance();
-		$this->router = $admin->router;
-		$this->formBuilder = $admin->formBuilder;
-	}
-
-	public function renderHeader()
-	{
-		return $this->htmlBuilder->tag('th', $this->getAttributesForHeader());
-	}
-
-	/**
-	 * @param $instance
-	 * @param int $totalCount
-	 * @return string
-	 */
-	public function render($instance, $totalCount)
-	{
-		$buttons = [];
-		$buttons[] = $this->button($instance);
-		return $this->htmlBuilder->tag('td', ['class' => 'text-right'], implode(' ', $buttons));
+		parent::__construct($name);
+		$this->orderable(false);
 	}
 
 	/**
-	 * @param $instance
-	 * @return string
+	 * Get or set icon class
+	 * @param string|null $icon
+	 * @return $this|string
 	 */
-	protected function button($instance)
+	public function icon($icon = null)
 	{
-		if ( ! is_null($this->url))
+		if (is_null($icon))
 		{
-			if (is_callable($this->url))
-			{
-				$callback = $this->url;
-				$url = $callback($instance);
-			} else
-			{
-				$url = strtr($this->url, [':id' => $instance->id]);
-			}
-		} else
-		{
-			$url = $this->router->routeToTable($this->modelItem->getAlias(), [
-				'action' => $this->name,
-				'id'     => $instance->id
-			]);
+			return $this->icon;
 		}
-		$attributes = [
-			'class'       => 'btn btn-default btn-sm',
-			'href'        => $url,
-			'data-toggle' => 'tooltip',
-		];
-		$content = '';
-		if ( ! is_null($this->icon))
-		{
-			$content .= '<i class="fa ' . $this->icon . '"></i>';
-		}
-		if ($this->style === 'long')
-		{
-			$content .= ' ' . $this->label;
-		} else
-		{
-			$attributes['title'] = $this->label;
-		}
-		if ( ! is_null($this->target))
-		{
-			$attributes['target'] = $this->target;
-		}
-		return $this->htmlBuilder->tag('a', $attributes, $content);
-	}
-
-	/**
-	 * @param string $icon
-	 * @return $this
-	 */
-	public function icon($icon)
-	{
 		$this->icon = $icon;
 		return $this;
 	}
 
 	/**
-	 * @param string $style
-	 * @return $this
+	 * Get or set action button style
+	 * @param string|null $style
+	 * @return $this|string
 	 */
-	public function style($style)
+	public function style($style = null)
 	{
+		if (is_null($style))
+		{
+			return $this->style;
+		}
 		$this->style = $style;
 		return $this;
 	}
 
 	/**
-	 * @param string|\Closure $url
-	 * @return $this
+	 * Get or set action callback
+	 * @param Closure|null $callback
+	 * @return $this|Closure
 	 */
-	public function url($url)
+	public function callback($callback = null)
 	{
+		if (is_null($callback))
+		{
+			return $this->callback;
+		}
+		$this->callback = $callback;
+		return $this;
+	}
+
+	/**
+	 * Get or set action button target
+	 * @param string|null $target
+	 * @return $this|string
+	 */
+	public function target($target = null)
+	{
+		if (is_null($target))
+		{
+			return $this->target;
+		}
+		$this->target = $target;
+		return $this;
+	}
+
+	/**
+	 * Get or set action buttom value (buttom label)
+	 * @param string|null $value
+	 * @return $this|string
+	 */
+	public function value($value = null)
+	{
+		if (is_null($value))
+		{
+			return $this->value;
+		}
+		$this->value = $value;
+		return $this;
+	}
+
+	/**
+	 * Render action button
+	 * @return \Illuminate\View\View
+	 */
+	public function render()
+	{
+		$params = [
+			'icon'   => $this->icon(),
+			'style'  => $this->style(),
+			'value'  => $this->value(),
+			'target' => $this->target(),
+			'url'    => $this->url(),
+		];
+		return view(AdminTemplate::view('column.action'), $params);
+	}
+
+	/**
+	 * Get or set action button url
+	 * @param string|null $url
+	 * @return $this|string
+	 */
+	public function url($url = null)
+	{
+		if (is_null($url))
+		{
+			if ( ! is_null($this->url))
+			{
+				if (is_callable($this->url))
+				{
+					return call_user_func($this->url, $this->instance);
+				}
+				if ( ! is_null($this->instance))
+				{
+					return strtr($this->url, [':id' => $this->instance->getKey()]);
+				}
+				return $this->url;
+			}
+			return $this->model()->displayUrl([
+				'_action' => $this->name(),
+				'_id'     => $this->instance->getKey(),
+			]);
+		}
 		$this->url = $url;
 		return $this;
 	}
 
 	/**
-	 * @param callable $callback
-	 * @return $this
+	 * Call action button callback
+	 * @param $instance
 	 */
-	public function callback($callback)
-	{
-		$this->callback = $callback;
-		return $this;
-	}
-
 	public function call($instance)
 	{
-		$callback = $this->callback;
-		return $callback($instance);
-	}
-
-	/**
-	 * @param string $target
-	 * @return $this
-	 */
-	public function target($target)
-	{
-		$this->target = $target;
-		return $this;
+		$callback = $this->callback();
+		call_user_func($callback, $instance);
 	}
 
 }

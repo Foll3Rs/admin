@@ -1,28 +1,21 @@
 <?php namespace SleepingOwl\Admin\Columns\Column;
 
-class Lists extends BaseColumn
+use AdminTemplate;
+use Illuminate\View\View;
+
+class Lists extends NamedColumn
 {
 
 	/**
-	 * @param $instance
-	 * @param int $totalCount
-	 * @return string
+	 * @return View
 	 */
-	public function render($instance, $totalCount)
+	public function render()
 	{
-		$list = $this->valueFromInstance($instance, $this->name);
-		$content = [];
-		foreach ($list as $item)
-		{
-			$content[] = $this->htmlBuilder->tag('li', [], $item);
-		}
-		$content = $this->htmlBuilder->tag('ul', ['class' => 'list-unstyled'], implode('', $content));
-		return parent::render($instance, $totalCount, $content);
-	}
-
-	public function isSortable()
-	{
-		return false;
+		$params = [
+			'values'  => $this->getValue($this->instance, $this->name()),
+			'append' => $this->append(),
+		];
+		return view(AdminTemplate::view('column.lists'), $params);
 	}
 
 }

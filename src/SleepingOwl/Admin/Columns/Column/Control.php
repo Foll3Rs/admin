@@ -1,104 +1,86 @@
 <?php namespace SleepingOwl\Admin\Columns\Column;
 
-use SleepingOwl\Admin\Admin;
-use SleepingOwl\Html\FormBuilder;
-use Lang;
-use SleepingOwl\Models\Interfaces\ModelWithOrderFieldInterface;
+use AdminTemplate;
+use Illuminate\View\View;
+use SleepingOwl\Admin\AssetManager\AssetManager;
 
 class Control extends BaseColumn
 {
+
 	/**
-	 * @var \SleepingOwl\Admin\Router
+	 * Column view
+	 * @var string
 	 */
-	protected $router;
-	/**
-	 * @var FormBuilder
-	 */
-	protected $formBuilder;
+	protected $view = 'control';
 
 	/**
 	 *
 	 */
 	function __construct()
 	{
-		parent::__construct('control-column', '');
-		$admin = Admin::instance();
-		$this->router = $admin->router;
-		$this->formBuilder = $admin->formBuilder;
+		parent::__construct();
+
+		$this->orderable(false);
 	}
 
 	/**
-	 * @param $instance
-	 * @param int $totalCount
-	 * @return string
+	 * Initialize column
 	 */
-	public function render($instance, $totalCount)
+	public function initialize()
 	{
-		$buttons = [];
-		if ( ! $this->modelItem->isOrderable())
+		parent::initialize();
+
+		AssetManager::addScript('admin::default/js/bootbox.js');
+		AssetManager::addScript('admin::default/js/columns/control.js');
+	}
+
+	/**
+	 * Check if instance supports soft-deletes and trashed
+	 * @return bool
+	 */
+	protected function trashed()
+	{
+		if (method_exists($this->instance, 'trashed'))
 		{
-			$buttons[] = $this->moveButtons($instance, $totalCount);
+			return $this->instance->trashed();
 		}
-		$buttons[] = $this->editButton($instance, $this->modelItem->isEditable($instance));
-		$buttons[] = $this->destroyButton($instance, $this->modelItem->isDeletable($instance));
-		return $this->htmlBuilder->tag('td', ['class' => 'text-right'], implode(' ', $buttons));
+		return false;
 	}
 
 	/**
-	 * @param $instance
-	 * @param bool $active
-	 * @return string
+	 * Check if instance editable
+	 * @return bool
 	 */
-	protected function editButton($instance, $active = true)
+	protected function editable()
 	{
-		$editParameters = [
-			'class'       => 'btn btn-default btn-sm',
-			'href'        => $this->router->routeToEdit($this->modelItem->getAlias(), $instance->getKey()),
-			'data-toggle' => 'tooltip',
-			'title'       => Lang::get('admin::lang.table.edit')
-		];
-		if ( ! $active)
-		{
-			$editParameters[] = 'disabled';
-		}
-		return $this->htmlBuilder->tag('a', $editParameters, '<i class="fa fa-pencil"></i>');
+		return ! $this->trashed() && ! is_null($this->model()->edit($this->instance->getKey()));
 	}
 
 	/**
-	 * @param $instance
-	 * @param bool $active
+	 * Get instance edit url
 	 * @return string
 	 */
-	protected function destroyButton($instance, $active = true)
+	protected function editUrl()
 	{
-		$content = '';
-		$content .= $this->formBuilder->open([
-			'method' => 'delete',
-			'url'    => $this->router->routeToDestroy($this->modelItem->getAlias(), $instance->getKey()),
-			'class'  => 'inline-block'
-		]);
-		$attributes = [
-			'class'       => 'btn btn-danger btn-sm btn-delete',
-			'type'        => 'submit',
-			'data-toggle' => 'tooltip',
-			'title'       => Lang::get('admin::lang.table.delete'),
-		];
-		if ( ! $active)
-		{
-			$attributes[] = 'disabled';
-		}
-		$content .= $this->htmlBuilder->tag('button', $attributes, '<i class="fa fa-times"></i>');
-		$content .= $this->formBuilder->close();
-		return $content;
+		return $this->model()->editUrl($this->instance->getKey());
 	}
 
 	/**
-	 * @param ModelWithOrderFieldInterface $instance
-	 * @param $totalCount
+	 * Check if instance is deletable
+	 * @return bool
+	 */
+	protected function deletable()
+	{
+		return ! $this->trashed() && ! is_null($this->model()->delete($this->instance->getKey()));
+	}
+
+	/**
+	 * Get instance delete url
 	 * @return string
 	 */
-	protected function moveButtons(ModelWithOrderFieldInterface $instance, $totalCount)
+	protected function deleteUrl()
 	{
+<<<<<<< HEAD
 		$sort = $instance->getOrderValue();
 		$buttons = [];
 		if ($sort > 0)
@@ -110,29 +92,46 @@ class Control extends BaseColumn
 			$buttons[] = $this->moveButton($this->router->routeToMovedown($this->modelItem->getAlias(), $instance->getKey()), Lang::get('admin::lang.table.moveDown'), '<i class="fa fa-angle-down"></i>');
 		}
 		return implode(' ', $buttons);
+=======
+		return $this->model()->deleteUrl($this->instance->getKey());
+>>>>>>> refs/remotes/origin/laravel-5.2
 	}
 
 	/**
-	 * @param $route
-	 * @param $title
-	 * @param $label
+	 * Check if instance is restorable
+	 * @return bool
+	 */
+	protected function restorable()
+	{
+		return $this->trashed() && ! is_null($this->model()->restore($this->instance->getKey()));
+	}
+
+	/**
+	 * Get instance restore url
 	 * @return string
 	 */
-	protected function moveButton($route, $title, $label)
+	protected function restoreUrl()
 	{
-		$content = '';
-		$content .= $this->formBuilder->open([
-			'method' => 'patch',
-			'url'    => $route,
-			'class'  => 'inline-block'
-		]);
-		$content .= $this->htmlBuilder->tag('button', [
-			'class'       => 'btn btn-default btn-sm',
-			'type'        => 'submit',
-			'data-toggle' => 'tooltip',
-			'title'       => $title
-		], $label);
-		$content .= $this->formBuilder->close();
-		return $content;
+		return $this->model()->restoreUrl($this->instance->getKey());
 	}
+<<<<<<< HEAD
+=======
+
+	/**
+	 * @return View
+	 */
+	public function render()
+	{
+		$params = [
+			'editable'   => $this->editable(),
+			'editUrl'    => $this->editUrl(),
+			'deletable'  => $this->deletable(),
+			'deleteUrl'  => $this->deleteUrl(),
+			'restorable' => $this->restorable(),
+			'restoreUrl' => $this->restoreUrl(),
+		];
+		return view(AdminTemplate::view('column.' . $this->view), $params);
+	}
+
+>>>>>>> refs/remotes/origin/laravel-5.2
 }

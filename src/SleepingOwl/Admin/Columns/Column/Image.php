@@ -1,52 +1,49 @@
 <?php namespace SleepingOwl\Admin\Columns\Column;
 
-use SleepingOwl\Models\Interfaces\ModelWithImageFieldsInterface;
+use AdminTemplate;
+use Illuminate\View\View;
+use SleepingOwl\Admin\AssetManager\AssetManager;
 
-class Image extends BaseColumn
+class Image extends NamedColumn
 {
 
-	function __construct($name, $label = null)
+	/**
+	 * Initialize column
+	 */
+	public function initialize()
 	{
-		if (is_null($label))
+		parent::initialize();
+
+		AssetManager::addStyle('admin::default/css/ekko-lightbox.min.css');
+		AssetManager::addScript('admin::default/js/ekko-lightbox.min.js');
+		AssetManager::addScript('admin::default/js/columns/image.js');
+	}
+
+	/**
+	 * @param $name
+	 */
+	function __construct($name)
+	{
+		parent::__construct($name);
+
+		$this->orderable(false);
+	}
+
+	/**
+	 * @return View
+	 */
+	public function render()
+	{
+		$value = $this->getValue($this->instance, $this->name());
+		if ( ! empty($value) && (strpos($value, '://') === false))
 		{
-			$label = '';
+			$value = asset($value);
 		}
-		parent::__construct($name, $label);
+		$params = [
+			'value'  => $value,
+			'append' => $this->append(),
+		];
+		return view(AdminTemplate::view('column.image'), $params);
 	}
 
-	/**
-	 * @param $instance
-	 * @param int $totalCount
-	 * @return string
-	 */
-	public function render($instance, $totalCount)
-	{
-		return parent::render($instance, $totalCount, $this->getCellContent($instance));
-	}
-
-	/**
-	 * @param ModelWithImageFieldsInterface $instance
-	 * @return string
-	 */
-	private function getCellContent(ModelWithImageFieldsInterface $instance)
-	{
-		$name = $this->name;
-		if ( ! $instance->$name->exists()) return '';
-		$img = $this->htmlBuilder->tag('img', [
-			'class'       => 'thumbnail',
-			'src'         => $instance->$name->thumbnail('admin_preview'),
-			'width'       => '80px',
-			'data-toggle' => 'tooltip',
-			'title'       => $instance->$name->info()
-		]);
-		return $this->htmlBuilder->tag('a', [
-			'href'        => $instance->$name->thumbnail('original'),
-			'data-toggle' => 'lightbox'
-		], $img);
-	}
-
-	public function isSortable()
-	{
-		return false;
-	}
 }

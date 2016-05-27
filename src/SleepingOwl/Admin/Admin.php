@@ -1,95 +1,32 @@
 <?php namespace SleepingOwl\Admin;
 
-use SleepingOwl\Html\FormBuilder;
-use SleepingOwl\Html\HtmlBuilder;
+use Illuminate\View\View;
+use SleepingOwl\Admin\Interfaces\TemplateInterface;
 use SleepingOwl\Admin\Menu\MenuItem;
-use SleepingOwl\Admin\Models\ModelItem;
-use SleepingOwl\Admin\Models\Models;
-use Illuminate\Config\Repository;
-use Illuminate\Filesystem\Filesystem;
-use Illuminate\Routing\Router as IlluminateRouter;
-use Symfony\Component\Finder\Finder;
-use Illuminate\Routing\UrlGenerator;
+use SleepingOwl\Admin\Model\ModelConfiguration;
 
-/**
- * Class Admin
- *
- * @package SleepingOwl\Admin
- */
 class Admin
 {
 	/**
-	 * Bootstrap filename
-	 */
-	const BOOTSRAP_FILE = 'bootstrap.php';
-	/**
 	 * @var Admin
 	 */
-	public static $instance;
-
+	protected static $instance;
 	/**
-	 * @var string
+	 * @var ModelConfiguration[]
 	 */
-	public $title;
+	protected $models = [];
 	/**
-	 * @var Router
+	 * @var TemplateInterface
 	 */
-	public $router;
+	protected $template;
 	/**
 	 * @var MenuItem
 	 */
-	public $menu;
-	/**
-	 * @var Models
-	 */
-	public $models;
-	/**
-	 * @var HtmlBuilder
-	 */
-	public $htmlBuilder;
-	/**
-	 * @var FormBuilder
-	 */
-	public $formBuilder;
-	/**
-	 * @var Finder
-	 */
-	protected $finder;
-	/**
-	 * @var string
-	 */
-	protected $bootstrapDirectory;
-	/**
-	 * @var Filesystem
-	 */
-	protected $filesystem;
+	protected $menu;
 
-	/**
-	 * @param HtmlBuilder $htmlBuilder
-	 * @param FormBuilder $formBuilder
-	 * @param Finder $finder
-	 * @param Repository $config
-	 * @param IlluminateRouter $illuminateRouter
-	 * @param UrlGenerator $urlGenerator
-	 * @param Filesystem $filesystem
-	 */
-	function __construct(HtmlBuilder $htmlBuilder, FormBuilder $formBuilder, Finder $finder, Repository $config,
-						 IlluminateRouter $illuminateRouter, UrlGenerator $urlGenerator, Filesystem $filesystem)
+	function __construct()
 	{
-		static::$instance = $this;
-
-		$this->htmlBuilder = $htmlBuilder;
-		$this->formBuilder = $formBuilder;
-		$this->finder = $finder;
-		$this->filesystem = $filesystem;
-
-		$this->title = $config->get('admin.title');
-		$this->bootstrapDirectory = $config->get('admin.bootstrapDirectory');
-		$this->router = new Router($illuminateRouter, $config, $urlGenerator, $config->get('admin.prefix'));
-		$this->menu = new MenuItem;
-		$this->models = new Models;
-
-		$this->requireBootstrap();
+		$this->menu = static::menu();
 	}
 
 	/**
@@ -99,40 +36,95 @@ class Admin
 	{
 		if (is_null(static::$instance))
 		{
-			app('\SleepingOwl\Admin\Admin');
+			static::$instance = new static; 
 		}
 		return static::$instance;
 	}
 
 	/**
-	 *
+	 * @param $class
+	 * @return ModelConfiguration
 	 */
-	protected function requireBootstrap()
+	public static function model($class)
 	{
-		if (! $this->filesystem->isDirectory($this->bootstrapDirectory)) return;
-		$files = $this->finder->create()->files()->name('/^[^_].+\.php$/')->in($this->bootstrapDirectory);
-		$files->sort(function ($a)
+		return static::instance()->getModel($class);
+	}
+
+	/**
+	 * @return Model\ModelConfiguration[]
+	 */
+	public static function models()
+	{
+		return static::instance()->getModels();
+	}
+
+	/**
+	 * @return string[]
+	 */
+	public static function modelAliases()
+	{
+		return array_map(function ($model)
 		{
-			return $a->getFilename() !== static::BOOTSRAP_FILE;
-		});
-		foreach ($files as $file)
-		{
-			$this->filesystem->requireOnce($file);
-		}
+			return $model->alias();
+		}, static::models());
 	}
 
 	/**
 	 * @param $class
-	 * @return ModelItem
+	 * @return ModelConfiguration
 	 */
-	public static function model($class)
+	public function getModel($class)
 	{
-		$modelItem = new ModelItem($class);
-		return $modelItem;
+		if ($this->hasModel($class))
+		{
+			return $this->models[$class];
+		}
+		$model = new ModelConfiguration($class);
+		$this->setModel($class, $model);
+		return $model;
 	}
 
 	/**
-	 * @param null $model
+	 * @return Model\ModelConfiguration[]
+	 */
+	public function getModels()
+	{
+		return $this->models;
+	}
+
+	/**
+	 * @param $class
+	 * @return bool
+	 */
+	public function hasModel($class)
+	{
+		return array_key_exists($class, $this->models);
+	}
+
+	/**
+	 * @param $class
+	 * @param ModelConfiguration $model
+	 */
+	public function setModel($class, $model)
+	{
+		$this->models[$class] = $model;
+	}
+
+	/**
+	 * @return TemplateInterface
+	 */
+	public function template()
+	{
+		if (is_null($this->template))
+		{
+			$templateClass = config('admin.template');
+			$this->template = app($templateClass);
+		}
+		return $this->template;
+	}
+
+	/**
+	 * @param string|null $model
 	 * @return MenuItem
 	 */
 	public static function menu($model = null)
@@ -141,14 +133,22 @@ class Admin
 	}
 
 	/**
-	 * @param string $content
-	 * @param $title
-	 * @return string
+	 * @return MenuItem[]
+	 */
+	public function getMenu()
+	{
+		return $this->menu->items();
+	}
+
+	/**
+	 * @param $content
+	 * @param string|null $title
+	 * @return View
 	 */
 	public static function view($content, $title = null)
 	{
-		$controller = \App::make('SleepingOwl\Admin\Controllers\AdminController', ['disableFilters' => true]);
-		return $controller->renderCustomContent($title, $content);
+		$controller = app('SleepingOwl\Admin\Http\Controllers\AdminController');
+		return $controller->render($title, $content);
 	}
 
 }

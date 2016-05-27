@@ -1,48 +1,59 @@
 <?php namespace SleepingOwl\Admin\AssetManager;
 
-use AdminAuth;
-use App;
-use SleepingOwl\Admin\Admin;
-use SleepingOwl\Admin\Router;
-
 class AssetManager
 {
-	/**
-	 * Styles array to include on every admin page
-	 * @var array
-	 */
-	protected static $styles = ['admin::all.min.css'];
-	/**
-	 * Scripts array to include on every admin page
-	 * @var array
-	 */
-	protected static $scripts = ['admin::all.min.js'];
 
+	/**
+	 * Registered styles
+	 * @var string[]
+	 */
+	protected static $styles = [];
+	/**
+	 * Registered scripts
+	 * @var string[]
+	 */
+	protected static $scripts = [];
+
+	/**
+	 * Return all registered styles
+	 * @return string[]
+	 */
 	public static function styles()
 	{
 		return static::assets(static::$styles);
 	}
 
+	/**
+	 * Register style
+	 * @param $style
+	 */
 	public static function addStyle($style)
 	{
 		static::$styles[] = $style;
 	}
 
+	/**
+	 * Get all registered scripts
+	 * @return string[]
+	 */
 	public static function scripts()
 	{
-		$scripts = static::assets(static::$scripts);
-		array_unshift($scripts, Admin::instance()->router->routeToLang(App::getLocale()));
-		return $scripts;
+		return static::assets(static::$scripts);
 	}
 
+	/**
+	 * Register script
+	 * @param $script
+	 */
 	public static function addScript($script)
 	{
 		static::$scripts[] = $script;
 	}
 
 	/**
-	 * @param $assets
-	 * @return array
+	 * Get only unique values from $assets and generate admin package asset urls
+	 * @param string[] $assets
+	 * @return string[]
 	 */
 	protected static function assets($assets)
 	{
@@ -51,9 +62,10 @@ class AssetManager
 			if (strpos($asset, 'admin::') !== false)
 			{
 				$asset = str_replace('admin::', '', $asset);
-				return Admin::instance()->router->routeToAsset($asset);
+				return asset('packages/sleeping-owl/admin/' . $asset);
 			}
 			return $asset;
 		}, array_unique($assets));
 	}
+
 } 

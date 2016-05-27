@@ -1,87 +1,91 @@
 <?php namespace SleepingOwl\Admin\Columns\Column;
 
+use AdminTemplate;
+use Illuminate\View\View;
 use SleepingOwl\Admin\Admin;
-use Lang;
 
-class Filter extends BaseColumn
+class Filter extends NamedColumn
 {
+
 	/**
-	 * @var \SleepingOwl\Admin\Router
-	 */
-	protected $router;
-	/**
-	 * Attribute name to get filter value from
-	 * @var string
-	 */
-	protected $value;
-	/**
-	 * Model classname to filter in, if omitted uses model from assigned model item
+	 * Filter related model
 	 * @var string
 	 */
 	protected $model;
+	/**
+	 * Field to get filter value from
+	 * @var string
+	 */
+	protected $field;
 
 	/**
-	 * @param string $name
-	 * @param string $label
+	 * Get or set filter related model
+	 * @param string|null $model
+	 * @return $this|string
 	 */
-	function __construct($name, $label = null)
+	public function model($model = null)
 	{
-		$this->hidden = true;
-		$this->router = Admin::instance()->router;
-		parent::__construct($name, $label);
-		$this->model($this->modelItem->getModelClass());
-		$this->value('id');
-	}
-
-	/**
-	 * @param $value
-	 * @return $this
-	 */
-	public function value($value)
-	{
-		$this->value = $value;
-		return $this;
-	}
-
-	/**
-	 * @param $model
-	 * @return $this
-	 */
-	public function model($model)
-	{
+		if (is_null($model))
+		{
+			if (is_null($this->model))
+			{
+				$this->model(get_class($this->instance));
+			}
+			return $this->model;
+		}
 		$this->model = $model;
 		return $this;
 	}
 
 	/**
-	 * @param $instance
-	 * @param int $totalCount
-	 * @return string
-	 * @throws \SleepingOwl\Admin\Exceptions\ModelNotFoundException
+	 * Get or set field to get filter value from
+	 * @param string|null $field
+	 * @return $this|string
 	 */
-	public function render($instance, $totalCount)
+	public function field($field = null)
 	{
-		$filterValue = $this->valueFromInstance($instance, $this->value);
-		$modelItem = Admin::instance()->models->modelWithClassname($this->model);
-		$url = $this->router->routeToModel($modelItem->getAlias(), [$this->name => $filterValue]);
-		if ($this->model === $this->modelItem->getModelClass())
+		if (is_null($field))
 		{
-			$class = 'fa-filter';
-			$title = Lang::get('admin::lang.table.filter');
-		} else
-		{
-			$class = 'fa-arrow-circle-o-right';
-			$title = Lang::get('admin::lang.table.filter-goto');
+			if (is_null($this->field))
+			{
+				$this->field($this->isSelf() ? $this->name() : 'id');
+			}
+			return $this->field;
 		}
-		$content = $this->htmlBuilder->tag('i', [
-			'class'       => [
-				'fa',
-				$class
-			],
-			'data-toggle' => 'tooltip',
-			'title'       => $title
-		]);
-		return $this->htmlBuilder->tag('a', ['href' => $url], $content);
+		$this->field = $field;
+		return $this;
 	}
 
-} 
+	/**
+	 * Get filter url
+	 * @return string
+	 */
+	public function getUrl()
+	{
+		$value = $this->getValue($this->instance, $this->field());
+		return Admin::model($this->model)->displayUrl([$this->name() => $value]);
+	}
+
+	/**
+	 * Check if filter applies to the current model
+	 * @return bool
+	 */
+	protected function isSelf()
+	{
+		return get_class($this->instance) == $this->model();
+	}
+
+	/**
+	 * @return View
+	 */
+	public function render()
+	{
+		$params = [
+			'isSelf' => $this->isSelf(),
+			'url'    => $this->getUrl(),
+			'value'  => $this->getValue($this->instance, $this->field()),
+		];
+		return view(AdminTemplate::view('column.filter'), $params);
+	}
+
+}

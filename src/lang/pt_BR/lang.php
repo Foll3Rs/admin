@@ -30,11 +30,19 @@ return [
 	'table'    => [
 		'new-entry'      => 'Nova entrada',
 		'edit'           => 'Editar',
+<<<<<<< HEAD
+=======
+		'restore'        => 'Restaurar',
+>>>>>>> refs/remotes/origin/laravel-5.2
 		'delete'         => 'Excluir',
 		'delete-confirm' => 'Tem certeza que deseja excluir este registro',
 		'delete-error'   => 'Ocorreu um erro ao excluir este registro. Você deve excluir todos os registros relacionados antes.',
 		'moveUp'         => 'Mover p/cima',
 		'moveDown'       => 'Mover p/baixo',
+<<<<<<< HEAD
+=======
+		'error'          => 'Ocorreu um erro ao processar sua solicitação',
+>>>>>>> refs/remotes/origin/laravel-5.2
 		'filter'         => 'Mostrar entradas similares',
 		'filter-goto'    => 'Mostrar',
 		'save'           => 'Salvar',
@@ -53,14 +61,37 @@ return [
 		'search'         => 'Pesquisar: ',
 		'emptyTable'     => 'Nenhum informação na tabela',
 		'paginate'       => [
+<<<<<<< HEAD
 			'first'    => '<i class="fa fa-angle-double-left"></i>',
 			'previous' => '<i class="fa fa-angle-left"></i>',
 			'next'     => '<i class="fa fa-angle-right"></i>',
 			'last'     => '<i class="fa fa-angle-double-right"></i>'
+=======
+			'first'    => 'Primeiro',
+			'previous' => '&larr;',
+			'next'     => '&rarr;',
+			'last'     => 'Último'
+>>>>>>> refs/remotes/origin/laravel-5.2
 		]
 	],
 	'select'   => [
 		'nothing'  => 'Nada selecionado',
+<<<<<<< HEAD
 		'selected' => 'selecionado'
 	]
 ];
+=======
+		'selected' => 'selecionado',
+		'placeholder' => 'Selecione da lista',
+	],
+	'image'    => [
+		'browse'         => 'Seleciona a imagem',
+		'browseMultiple' => 'Selecione as imagens',
+		'remove'         => 'Remover a imagem',
+	],
+	'file'     => [
+		'browse' => 'Selecionar o arquivo',
+		'remove' => 'Remover o arquivo',
+	],
+];
+>>>>>>> refs/remotes/origin/laravel-5.2

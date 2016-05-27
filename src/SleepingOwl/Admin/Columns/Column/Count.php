@@ -1,22 +1,21 @@
 <?php namespace SleepingOwl\Admin\Columns\Column;
 
-class Count extends BaseColumn
+use AdminTemplate;
+use Illuminate\View\View;
+
+class Count extends NamedColumn
 {
 
-	public function render($instance, $totalCount)
+	/**
+	 * @return View
+	 */
+	public function render()
 	{
-		$content = count($this->valueFromInstance($instance, $this->name));
-		return parent::render($instance, $totalCount, $content);
+		$params = [
+			'value'  => count($this->getValue($this->instance, $this->name())),
+			'append' => $this->append(),
+		];
+		return view(AdminTemplate::view('column.count'), $params);
 	}
 
-	public function getRelation()
-	{
-		return $this->name;
-	}
-
-	public function isSortable()
-	{
-		return ! $this->modelItem->isAsync();
-	}
-
-} 
+}

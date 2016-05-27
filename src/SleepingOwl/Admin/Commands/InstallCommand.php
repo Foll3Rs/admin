@@ -1,18 +1,17 @@
 <?php namespace SleepingOwl\Admin\Commands;
 
-use Config;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\App;
 use Symfony\Component\Console\Input\InputOption;
 
 class InstallCommand extends Command
 {
+
 	/**
 	 * The console command name.
 	 * @var string
 	 */
 	protected $name = 'admin:install';
-
 	/**
 	 * The console command description.
 	 * @var string
@@ -27,24 +26,22 @@ class InstallCommand extends Command
 	{
 		$title = $this->option('title');
 
-		$this->call('vendor:publish', ['--provider' => 'Intervention\Image\ImageServiceProviderLaravel5']);
 		$this->call('vendor:publish', ['--provider' => 'SleepingOwl\Admin\AdminServiceProvider']);
 
 		$this->publishDB();
-
-		$this->publishImagecacheConfig();
-		$this->publishSelfConfig($title);
+		$this->publishConfig($title);
 
 		$this->createBootstrapDirectory();
 		$this->createMenuFile();
 		$this->createBootstrapFile();
+		$this->createRoutesFile();
 		$this->createDummyUserFile();
 
 		$this->createPublicDefaultStructure();
 	}
 
 	/**
-	 *
+	 * Migrate database and default seed
 	 */
 	protected function publishDB()
 	{
@@ -56,11 +53,11 @@ class InstallCommand extends Command
 	}
 
 	/**
-	 *
+	 * Create bootstrap directory
 	 */
 	protected function createBootstrapDirectory()
 	{
-		$directory = Config::get('admin.bootstrapDirectory');
+		$directory = config('admin.bootstrapDirectory');
 
 		if ( ! is_dir($directory))
 		{
@@ -70,11 +67,11 @@ class InstallCommand extends Command
 	}
 
 	/**
-	 *
+	 * Create default menu file
 	 */
 	protected function createMenuFile()
 	{
-		$file = Config::get('admin.bootstrapDirectory') . '/menu.php';
+		$file = config('admin.bootstrapDirectory') . '/menu.php';
 		if ( ! file_exists($file))
 		{
 			$contents = $this->laravel['files']->get(__DIR__ . '/stubs/menu.stub');
@@ -84,11 +81,11 @@ class InstallCommand extends Command
 	}
 
 	/**
-	 *
+	 * Create default bootstrap file
 	 */
 	protected function createBootstrapFile()
 	{
-		$file = Config::get('admin.bootstrapDirectory') . '/bootstrap.php';
+		$file = config('admin.bootstrapDirectory') . '/bootstrap.php';
 		if ( ! file_exists($file))
 		{
 			$contents = $this->laravel['files']->get(__DIR__ . '/stubs/bootstrap.stub');
@@ -98,11 +95,25 @@ class InstallCommand extends Command
 	}
 
 	/**
-	 *
+	 * Create default routes file
+	 */
+	protected function createRoutesFile()
+	{
+		$file = config('admin.bootstrapDirectory') . '/routes.php';
+		if ( ! file_exists($file))
+		{
+			$contents = $this->laravel['files']->get(__DIR__ . '/stubs/routes.stub');
+			$this->laravel['files']->put($file, $contents);
+			$this->line('<info>Bootstrap file was created:</info> ' . str_replace(base_path(), '', $file));
+		}
+	}
+
+	/**
+	 * Create dummy user file
 	 */
 	protected function createDummyUserFile()
 	{
-		$file = Config::get('admin.bootstrapDirectory') . '/User.php';
+		$file = config('admin.bootstrapDirectory') . '/User.php';
 		if ( ! file_exists($file))
 		{
 			$contents = $this->laravel['files']->get(__DIR__ . '/stubs/User.stub');
@@ -112,21 +123,7 @@ class InstallCommand extends Command
 	}
 
 	/**
-	 *
-	 */
-	protected function publishImagecacheConfig()
-	{
-		$file = config_path('imagecache.php');
-		if ( ! file_exists($file))
-		{
-			$contents = $this->laravel['files']->get($file);
-			$contents = str_replace('\'route\' => null,', '\'route\' => \'img/cache\',', $contents);
-			$this->laravel['files']->put($file, $contents);
-		}
-	}
-
-	/**
-	 *
+	 * Create public default structure
 	 */
 	protected function createPublicDefaultStructure()
 	{
@@ -135,17 +132,13 @@ class InstallCommand extends Command
 		{
 			$this->laravel['files']->makeDirectory($uploadsDirectory, 0755, true, true);
 		}
-		$filesDirectory = public_path('files');
-		if ( ! is_dir($filesDirectory))
-		{
-			$this->laravel['files']->makeDirectory($filesDirectory, 0755, true, true);
-		}
 	}
 
 	/**
+	 * Publish package config
 	 * @param string|null $title
 	 */
-	protected function publishSelfConfig($title = null)
+	protected function publishConfig($title = null)
 	{
 		$file = config_path('admin.php');
 		if ( ! is_null($title))

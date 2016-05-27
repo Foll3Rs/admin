@@ -1,12 +1,25 @@
 <?php
 
+<<<<<<< HEAD
 Admin::model(':modelClass')->title(':title')->with(:with)->filters(function ()
+=======
+Admin::model('__modelClass')->title('__title')->display(function ()
+>>>>>>> refs/remotes/origin/laravel-5.2
 {
-:filters
-})->columns(function ()
+	$display = AdminDisplay::datatables();
+	$display->with(__with);
+	$display->filters([
+__filters
+	]);
+	$display->columns([
+__columns
+	]);
+	return $display;
+})->createAndEdit(function ()
 {
-:columns
-})->form(function ()
-{
-:form
+	$form = AdminForm::form();
+	$form->items([
+__form
+	]);
+	return $form;
 });

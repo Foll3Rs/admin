@@ -1,35 +1,20 @@
 <?php namespace SleepingOwl\Admin\Columns\Column;
 
-use Lang;
+use AdminTemplate;
+use Illuminate\View\View;
 
-class Url extends BaseColumn
+class Url extends NamedColumn
 {
-	/**
-	 * @param string $name
-	 * @param string $label
-	 */
-	function __construct($name, $label = null)
-	{
-		$this->hidden = true;
-		parent::__construct($name, $label);
-	}
 
 	/**
-	 * @param $instance
-	 * @param int $totalCount
-	 * @return string
+	 * @return View
 	 */
-	public function render($instance, $totalCount)
+	public function render()
 	{
-		$url = $this->valueFromInstance($instance, $this->name);
-		$content = $this->htmlBuilder->tag('i', [
-			'class'       => 'fa fa-arrow-circle-o-right',
-			'data-toggle' => 'tooltip',
-			'title'       => Lang::get('admin::lang.table.filter-goto')
-		]);
-		return $this->htmlBuilder->tag('a', [
-			'href'   => $url,
-			'target' => '_blank'
-		], $content);
+		$params = [
+			'url'    => $this->getValue($this->instance, $this->name()),
+		];
+		return view(AdminTemplate::view('column.url'), $params);
 	}
+
 }

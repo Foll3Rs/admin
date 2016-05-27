@@ -1,13 +1,13 @@
 <?php namespace SleepingOwl\Admin\Columns\Column;
 
-use Illuminate\Support\Str;
+use Illuminate\Contracts\Support\Renderable;
 use SleepingOwl\Admin\Admin;
-use SleepingOwl\Admin\Columns\Interfaces\ColumnInterface;
-use SleepingOwl\Admin\Models\ModelItem;
-use Illuminate\Support\Collection;
+use SleepingOwl\Admin\Interfaces\ColumnInterface;
+use SleepingOwl\Admin\Model\ModelConfiguration;
 
-abstract class BaseColumn implements ColumnInterface
+abstract class BaseColumn implements Renderable, ColumnInterface
 {
+<<<<<<< HEAD
 	/**
 	 * Column field name
 	 *
@@ -52,37 +52,21 @@ abstract class BaseColumn implements ColumnInterface
 	 * @var bool
 	 */
 	protected $hidden = false;
+=======
+>>>>>>> refs/remotes/origin/laravel-5.2
 
 	/**
-	 * @param string $name
-	 * @param string $label
+	 * Column header
+	 * @var ColumnHeader
 	 */
-	function __construct($name, $label = null)
-	{
-		$this->name = $name;
-		if (is_null($label))
-		{
-			$this->label = ucwords(str_replace('_', ' ', $name));
-		} else
-		{
-			$this->label = $label;
-		}
-		$this->sortable(true);
-		$this->htmlBuilder = Admin::instance()->htmlBuilder;
-		$this->modelItem = ModelItem::$current;
-	}
-
+	protected $header;
 	/**
-	 * Set sortable property
-	 *
-	 * @param bool $sortable
+	 * Model instance currently rendering
+	 * @var mixed
 	 */
-	public function sortable($sortable)
-	{
-		$this->sortable = $sortable;
-	}
-
+	protected $instance;
 	/**
+<<<<<<< HEAD
 	 * Set this column as default sortable for this model item
 	 * @param string $dest
 	 */
@@ -91,54 +75,56 @@ abstract class BaseColumn implements ColumnInterface
 		$this->sortable = 'default';
 		$this->sortableDest = $dest;
 	}
+=======
+	 * Column appendant
+	 * @var ColumnInterface
+	 */
+	protected $append;
+>>>>>>> refs/remotes/origin/laravel-5.2
 
 	/**
-	 * Is this column sortable?
 	 *
-	 * @return bool
 	 */
-	public function isSortable()
+	function __construct()
 	{
-		return $this->sortable !== false;
+		$this->header = new ColumnHeader;
 	}
 
 	/**
-	 * Is this column default sortable?
-	 *
-	 * @return bool
+	 * Initialize column
 	 */
-	public function isSortableDefault()
+	public function initialize()
 	{
-		return $this->sortable === 'default';
 	}
 
 	/**
-	 * Append column to this column cells
-	 *
-	 * @param ColumnInterface $append
+	 * Get related model configuration
+	 * @return ModelConfiguration
 	 */
-	public function append(ColumnInterface $append)
+	protected function model()
 	{
-		$this->appends[] = $append;
+		return Admin::model(get_class($this->instance));
 	}
 
 	/**
-	 * Render column header
-	 *
-	 * @return string
+	 * Set column header label
+	 * @param string $title
+	 * @return $this
 	 */
-	public function renderHeader()
+	public function label($title)
 	{
-		return $this->htmlBuilder->tag('th', $this->getAttributesForHeader(), $this->label);
+		$this->header->title($title);
+		return $this;
 	}
 
 	/**
-	 * Get attributes for column header tag
-	 *
-	 * @return array
+	 * Enable/disable column orderable feature
+	 * @param bool $orderable
+	 * @return $this
 	 */
-	protected function getAttributesForHeader()
+	public function orderable($orderable)
 	{
+<<<<<<< HEAD
 		$attributes = [];
 		if ( ! $this->isSortable())
 		{
@@ -150,100 +136,66 @@ abstract class BaseColumn implements ColumnInterface
 		}
 		$attributes['style'] = 'width:10px;';
 		return $attributes;
+=======
+		$this->header->orderable($orderable);
+		return $this;
+>>>>>>> refs/remotes/origin/laravel-5.2
 	}
 
 	/**
-	 * Render column cell
-	 *
-	 * @param $instance
-	 * @param int $totalCount
-	 * @param string $content
-	 * @return string
-	 */
-	public function render($instance, $totalCount, $content = null)
-	{
-		if (is_null($content))
-		{
-			$content = $this->valueFromInstance($instance, $this->name);
-		}
-		$content = $this->renderAppends($instance, $totalCount, $content);
-		return $this->htmlBuilder->tag('td', $this->getAttributesForCell($instance), $content);
-	}
-
-	/**
-	 * Get attributes for column cell tag
-	 *
-	 * @return array
-	 */
-	protected function getAttributesForCell($instance)
-	{
-		return [];
-	}
-
-	/**
-	 * Render column cells appends
-	 *
-	 * @param $instance
-	 * @param $totalCount
-	 * @param $content
-	 * @return string
-	 */
-	protected function renderAppends($instance, $totalCount, $content)
-	{
-		$appends = [$content];
-		foreach ($this->appends as $append)
-		{
-			$appends[] = $append->render($instance, $totalCount);
-		}
-		return implode(' ', $appends);
-	}
-
-	/**
-	 * Get value from $instance by $name
-	 * Use dot delimiter and search recursive
-	 *
-	 * @param $instance
-	 * @param string $name
-	 * @return mixed
-	 */
-	public function valueFromInstance($instance, $name)
-	{
-		$result = $instance;
-		$parts = explode('.', $name);
-		foreach ($parts as $part)
-		{
-			if ($result instanceof Collection)
-			{
-				$result = $result->lists($part);
-			} elseif (is_null($result))
-			{
-				$result = null;
-			} else
-			{
-				$result = $result->$part;
-			}
-		}
-		if (is_string($result))
-		{
-			$result = e($result);
-		}
-		return $result;
-	}
-
-	/**
+	 * Check if column is orderable
 	 * @return bool
 	 */
-	public function isHidden()
+	public function isOrderable()
 	{
-		return $this->hidden;
+		return $this->header()->orderable();
+	}
+
+	/**
+	 * Get column header
+	 * @return ColumnHeader
+	 */
+	public function header()
+	{
+		return $this->header;
+	}
+
+	/**
+	 * Get or set column appendant
+	 * @param ColumnInterface|null $append
+	 * @return $this|ColumnInterface
+	 */
+	public function append($append = null)
+	{
+		if (is_null($append))
+		{
+			return $this->append;
+		}
+		$this->append = $append;
+		return $this;
+	}
+
+	/**
+	 * Set currently rendering instance
+	 * @param mixed $instance
+	 * @return $this
+	 */
+	public function setInstance($instance)
+	{
+		$this->instance = $instance;
+		if ( ! is_null($this->append()) && ($this->append() instanceof ColumnInterface))
+		{
+			$this->append()->setInstance($instance);
+		}
+		return $this;
 	}
 
 	/**
 	 * @return string
 	 */
-	public function getName()
+	function __toString()
 	{
-		return $this->name;
+		return (string)$this->render();
 	}
 
 }

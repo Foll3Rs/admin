@@ -1,21 +1,23 @@
 <?php namespace SleepingOwl\Admin\Commands;
 
+<<<<<<< HEAD
 use Config;
+=======
+>>>>>>> refs/remotes/origin/laravel-5.2
 use Illuminate\Console\Command;
 use Illuminate\Support\Str;
-use SleepingOwl\Admin\Commands\Compilers\ModelCompiler;
 use SleepingOwl\AdminAuth\Entities\Administrator;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputOption;
 
 class AdministratorsCommand extends Command
 {
+
 	/**
 	 * The console command name.
 	 * @var string
 	 */
 	protected $name = 'admin:administrators';
-
 	/**
 	 * The console command description.
 	 * @var string
@@ -30,18 +32,19 @@ class AdministratorsCommand extends Command
 	{
 		if ($this->option('new'))
 		{
-			$this->createNewAdministrator();
-			return;
+			return $this->createNewAdministrator();
 		}
 		if ($this->option('delete'))
 		{
-			$this->deleteAdministrator();
-			return;
+			return $this->deleteAdministrator();
 		}
 		if ($this->option('password'))
 		{
-			$this->changePassword();
-			return;
+			return $this->changePassword();
+		}
+		if ($this->option('rename'))
+		{
+			return $this->renameAdministrator();
 		}
 		$this->listAdministrators();
 	}
@@ -70,10 +73,19 @@ class AdministratorsCommand extends Command
 				null,
 				InputOption::VALUE_NONE,
 				'Change administrator password.'
-			]
+			],
+			[
+				'rename',
+				null,
+				InputOption::VALUE_NONE,
+				'Change administrator name.'
+			],
 		];
 	}
 
+	/**
+	 * Register new administrator
+	 */
 	protected function createNewAdministrator()
 	{
 		$username = $this->ask('Username:');
@@ -108,6 +120,10 @@ class AdministratorsCommand extends Command
 		$this->info('Administrator ' . $username . ' was successfully created!');
 	}
 
+	/**
+	 * Get all administrators
+	 * @return array
+	 */
 	protected function getAdministrators()
 	{
 		$administrators = Administrator::orderBy('id', 'asc')->get();
@@ -119,6 +135,9 @@ class AdministratorsCommand extends Command
 		return $result;
 	}
 
+	/**
+	 * Render administrators list
+	 */
 	protected function listAdministrators()
 	{
 		$administrators = $this->getAdministrators();
@@ -128,9 +147,12 @@ class AdministratorsCommand extends Command
 		}
 	}
 
+	/**
+	 * Delete administrator
+	 */
 	protected function deleteAdministrator()
 	{
-		$id = $this->selectAdministrator('Which administrator we deleting?');
+		$id = $this->selectAdministrator('Select administrator to delete:');
 
 		$confirm = $this->confirm('Are you sure want to delete administrator with id ' . $id . '?', false);
 		if ( ! $confirm) return;
@@ -139,9 +161,29 @@ class AdministratorsCommand extends Command
 		$this->info('Administrator with id ' . $id . ' was deleted.');
 	}
 
+	/**
+	 * Rename administrator
+	 */
+	protected function renameAdministrator()
+	{
+		$id = $this->selectAdministrator('Select administrator to rename:');
+
+		$username = $this->ask('Username:');
+		if (is_null($username)) return;
+
+		$administrator = Administrator::find($id);
+		$administrator->name = $username;
+		$administrator->save();
+
+		$this->info('Administrator with id ' . $id . ' was renamed.');
+	}
+
+	/**
+	 * Change administrator's password
+	 */
 	protected function changePassword()
 	{
-		$id = $this->selectAdministrator('Which administrator password we changing?');
+		$id = $this->selectAdministrator('Select administrator to change password:');
 
 		$password = $this->secret('New password:');
 		if (is_null($password)) return;
@@ -161,7 +203,8 @@ class AdministratorsCommand extends Command
 	}
 
 	/**
-	 * @return mixed
+	 * Select administrator
+	 * @return int
 	 */
 	protected function selectAdministrator($message)
 	{

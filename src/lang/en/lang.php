@@ -30,11 +30,13 @@ return [
 	'table'    => [
 		'new-entry'      => 'New Entry',
 		'edit'           => 'Edit',
+		'restore'        => 'Restore',
 		'delete'         => 'Delete',
 		'delete-confirm' => 'Are you sure want to delete this entry?',
 		'delete-error'   => 'Error while deleting this entry. You must delete all linked entries first.',
 		'moveUp'         => 'Move Up',
 		'moveDown'       => 'Move Down',
+		'error'          => 'There was an error during your request',
 		'filter'         => 'Show similar entries',
 		'filter-goto'    => 'Show',
 		'save'           => 'Save',
@@ -60,7 +62,17 @@ return [
 		]
 	],
 	'select'   => [
-		'nothing'  => 'Nothing selected',
-		'selected' => 'selected'
-	]
+		'nothing'     => 'Nothing selected',
+		'selected'    => 'selected',
+		'placeholder' => 'Select from the list',
+	],
+	'image'    => [
+		'browse'         => 'Select Image',
+		'browseMultiple' => 'Select Images',
+		'remove'         => 'Remove Image',
+	],
+	'file'     => [
+		'browse' => 'Select File',
+		'remove' => 'Remove File',
+	],
 ];

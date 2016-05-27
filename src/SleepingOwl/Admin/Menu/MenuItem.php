@@ -1,167 +1,119 @@
 <?php namespace SleepingOwl\Admin\Menu;
 
+use AdminTemplate;
+use Closure;
+use Illuminate\Contracts\Support\Renderable;
+use Illuminate\View\View;
 use SleepingOwl\Admin\Admin;
-use SleepingOwl\Html\HtmlBuilder;
-use SleepingOwl\Admin\Router;
 use Illuminate\Support\Arr;
+use SleepingOwl\Admin\Model\ModelConfiguration;
 
-/**
- * Class MenuItem
- */
-class MenuItem
+class MenuItem implements Renderable
 {
+
 	/**
+	 * Current menu item
 	 * @var MenuItem
 	 */
 	public static $current;
 	/**
-	 * @var HtmlBuilder
-	 */
-	protected $htmlBuilder;
-	/**
+	 * Menu item related model class
 	 * @var string
 	 */
 	protected $modelClass;
 	/**
+	 * Menu item label
 	 * @var string
 	 */
 	protected $label;
 	/**
+	 * Menu item icon
 	 * @var string
 	 */
 	protected $icon;
 	/**
-	 * @var string
+	 * Menu item subitems
+	 * @var MenuItem[]
 	 */
-	protected $uses;
+	protected $subItems = [];
 	/**
+	 * Menu item url
 	 * @var string
 	 */
 	protected $url;
 	/**
-	 * @var MenuItem[]
+	 * Menu item depth level
+	 * @var int
 	 */
-	protected $subItems;
-	/**
-	 * @var Router
-	 */
-	protected $router;
-	/**
-	 * @var bool
-	 */
-	protected $hidden = false;
+	protected $level;
 
 	/**
 	 * @param string|null $modelClass
 	 */
 	function __construct($modelClass = null)
 	{
-		$admin = Admin::instance();
-		$this->router = $admin->router;
-		$this->htmlBuilder = $admin->htmlBuilder;
 		$this->modelClass = $modelClass;
-		$this->subItems = [];
 		if (is_null(static::$current))
 		{
 			static::$current = $this;
+			$this->level(0);
 		} else
 		{
 			static::$current->addItem($this);
+			$this->level(static::$current->level() + 1);
 		}
 	}
 
 	/**
-	 * @param string $label
-	 * @return $this
+	 * Get related model configuration
+	 * @return ModelConfiguration
 	 */
-	public function label($label)
+	protected function getModelItem()
 	{
+		return Admin::model($this->modelClass);
+	}
+
+	/**
+	 * Get or set menu item label
+	 * @param string|null $label
+	 * @return $this|string
+	 */
+	public function label($label = null)
+	{
+		if (is_null($label))
+		{
+			return is_null($this->label) ? $this->getModelItem()->title() : $this->label;
+		}
 		$this->label = $label;
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * Get or set menu item icon
+	 * @param string|null $icon
+	 * @return $this|string
 	 */
-	public function getLabel()
+	public function icon($icon = null)
 	{
-		if ( ! is_null($this->label)) return $this->label;
-
-		return $this->getModelItem()->getTitle();
-	}
-
-	/**
-	 * @param string $icon
-	 * @return $this
-	 */
-	public function icon($icon)
-	{
+		if (is_null($icon))
+		{
+			return $this->icon;
+		}
 		$this->icon = $icon;
 		return $this;
 	}
 
 	/**
-	 * @return string
+	 * Get or set menu item subitems
+	 * @param Closure|null $callback
+	 * @return $this|MenuItem[]
 	 */
-	public function getIcon()
+	public function items($callback = null)
 	{
-		return $this->icon;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getUses()
-	{
-		return $this->uses;
-	}
-
-	/**
-	 * @param string $uses
-	 * @return $this
-	 */
-	public function uses($uses)
-	{
-		$this->uses = $uses;
-		return $this;
-	}
-
-	/**
-	 * @param string $url
-	 * @return $this
-	 */
-	public function url($url)
-	{
-		$this->url = $url;
-		return $this;
-	}
-
-	/**
-	 * @return string
-	 */
-	public function getUrl()
-	{
-		if ( ! is_null($this->url))
+		if (is_null($callback))
 		{
-			if (strpos($this->url, '://') !== false)
-			{
-				return $this->url;
-			}
-			return $this->router->routeToWildcard($this->url);
+			return $this->subItems;
 		}
-		if ( ! is_null($this->modelClass))
-		{
-			return $this->router->routeToModel($this->getModelItem()->getAlias());
-		}
-		return '#';
-	}
-
-	/**
-	 * @param \Closure $callback
-	 * @return $this
-	 */
-	public function items($callback)
-	{
 		$old = static::$current;
 		static::$current = $this;
 		call_user_func($callback);
@@ -170,39 +122,7 @@ class MenuItem
 	}
 
 	/**
-	 * @return bool
-	 */
-	public function hasSubItems()
-	{
-		return count($this->subItems) != 0;
-	}
-
-	/**
-	 * @param $url
-	 * @return $this
-	 */
-	public function itemWithUrl($url)
-	{
-		if ($this->url === $url) return $this;
-		foreach ($this->subItems as $item)
-		{
-			if ($result = $item->itemWithUrl($url))
-			{
-				return $result;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * @return MenuItem[]
-	 */
-	public function getItems()
-	{
-		return $this->subItems;
-	}
-
-	/**
+	 * Add subitem
 	 * @param MenuItem $item
 	 * @return $this
 	 */
@@ -213,89 +133,68 @@ class MenuItem
 	}
 
 	/**
-	 * @return \SleepingOwl\Admin\Models\ModelItem
-	 * @throws \SleepingOwl\Admin\Exceptions\ModelNotFoundException
+	 * Get or set menu item depth level
+	 * @param int|null $level
+	 * @return $this|int
 	 */
-	protected function getModelItem()
+	public function level($level = null)
 	{
-		return Admin::instance()->models->modelWithClassname($this->modelClass);
-	}
-
-	/**
-	 * @param int $level
-	 * @return string
-	 */
-	public function render($level = 1)
-	{
-		if ($this->isHidden()) return;
-		if ($this->hasSubItems())
+		if (is_null($level))
 		{
-			$level++;
-			$content = $this->htmlBuilder->tag('i', [
-				'class' => [
-					'fa',
-					'fa-fw',
-					$this->getIcon()
-				]
-			]);
-			$content .= ' ' . $this->getLabel() . $this->htmlBuilder->tag('span', ['class' => 'fa arrow']);
-			$content = $this->htmlBuilder->tag('a', ['href' => $this->getUrl()], $content);
-
-			$subitemsContent = '';
-			foreach ($this->subItems as $item)
-			{
-				$subitemsContent .= $item->render($level);
-			}
-
-			$classByLevel = [
-				2 => 'nav-second-level',
-				3 => 'nav-third-level'
-			];
-			$content .= $this->htmlBuilder->tag('ul', [
-				'class' => [
-					'nav',
-					Arr::get($classByLevel, $level, null)
-				]
-			], $subitemsContent);
-		} else
-		{
-			$content = $this->renderSingleItem();
+			return $this->level;
 		}
-		return $this->htmlBuilder->tag('li', [], $content);
-	}
-
-	/**
-	 * @return string
-	 */
-	protected function renderSingleItem()
-	{
-		$content = $this->htmlBuilder->tag('i', [
-			'class' => [
-				'fa',
-				'fa-fw',
-				$this->getIcon()
-			]
-		]);
-		$content .= ' ' . $this->getLabel();
-		return $this->htmlBuilder->tag('a', ['href' => $this->getUrl()], $content);
-	}
-
-	/**
-	 * @param bool $hidden
-	 * @return $this
-	 */
-	public function hidden($hidden = true)
-	{
-		$this->hidden = $hidden;
+		$this->level = $level;
 		return $this;
 	}
 
 	/**
-	 * @return bool
+	 * Get or set menu item url
+	 * @param string|null $url
+	 * @return $this|string
 	 */
-	public function isHidden()
+	public function url($url = null)
 	{
-		return $this->hidden;
+		if (is_null($url))
+		{
+			if ( ! is_null($this->url))
+			{
+				if (strpos($this->url, '://') !== false)
+				{
+					return $this->url;
+				}
+				return route('admin.wildcard', $this->url);
+			}
+			if ( ! is_null($this->modelClass))
+			{
+				return $this->getModelItem()->displayUrl();
+			}
+			return '#';
+		}
+		$this->url = $url;
+		return $this;
+	}
+
+	/**
+	 * @return View
+	 */
+	public function render()
+	{
+		$params = [
+			'icon'  => $this->icon(),
+			'label' => $this->label(),
+			'url'   => $this->url(),
+			'level' => $this->level(),
+			'items' => $this->items(),
+		];
+		return view(AdminTemplate::view('_partials.menu_item'), $params);
+	}
+
+	/**
+	 * @return string
+	 */
+	function __toString()
+	{
+		return (string)$this->render();
 	}
 
 }
